@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - ZeroTier Controller{% endblock %}
+
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block content %}
+<div class="setup-page">
+    <div class="setup-container">
+        <div class="setup-card">
+            <div class="setup-header">
+                <i class="fas fa-shield-alt"></i>
+                <h1>ZeroTier Controller</h1>
+                <p>Configure your API token to get started</p>
+            </div>
+
+            <form method="POST" class="setup-form">
+                <div class="form-group">
+                    <label for="api_token">
+                        <i class="fas fa-key"></i> API Token
+                    </label>
+                    <input 
+                        type="password" 
+                        id="api_token" 
+                        name="api_token" 
+                        placeholder="Enter your ZeroTier API token"
+                        value="{{ request.form.api_token if request.form }}"
+                        required
+                        autocomplete="off"
+                    >
+                    <small class="help-text">
+                        Get your token from 
+                        <a href="https://my.zerotier.com/account" target="_blank" rel="noopener">
+                            ZeroTier Central
+                        </a>
+                    </small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save & Continue
+                    </button>
+                    
+                    {% if has_token %}
+                    <a href="/" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+
+            <div class="setup-info">
+                <details>
+                    <summary>
+                        <i class="fas fa-question-circle"></i> How to get your API token?
+                    </summary>
+                    <div class="info-content">
+                        <ol>
+                            <li>Log into <a href="https://my.zerotier.com" target="_blank">ZeroTier Central</a></li>
+                            <li>Go to <strong>Account Settings</strong></li>
+                            <li>Scroll to <strong>API Access Tokens</strong> section</li>
+                            <li>Click <strong>Generate Token</strong></li>
+                            <li>Copy the token and paste it here</li>
+                        </ol>
+                        <div class="warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Keep your token secure!</strong> Don't share it or commit it to public repositories.
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+
+        <div class="setup-footer">
+            <p>ZeroTier Controller v1.0</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Token visibility toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const tokenInput = document.getElementById('api_token');
+        const showTokenBtn = document.createElement('button');
+        showTokenBtn.type = 'button';
+        showTokenBtn.className = 'show-token-btn';
+        showTokenBtn.innerHTML = '<i class="fas fa-eye"></i>';
+        
+        tokenInput.parentNode.appendChild(showTokenBtn);
+        
+        showTokenBtn.addEventListener('click', function() {
+            if (tokenInput.type === 'password') {
+                tokenInput.type = 'text';
+                this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                tokenInput.type = 'password';
+                this.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ZT Controller{% endblock %}</title>
+    
+    <link rel="manifest" href="/static/app4/manifest.json">
+    <meta name="theme-color" content="#f7d51d">
+    <link rel="apple-touch-icon" href="/static/app4/icon-192.png">
+    
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <i class="fas fa-bolt"></i>
+                <span>ZT Controller</span>
+            </a>
+            <div class="header-actions">
+                <a href="/logout" style="color: var(--text-dim)"><i class="fas fa-sign-out-alt"></i></a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/app4/sw.js');
+            });
+        }
+    </script>
+</body>
+</html>

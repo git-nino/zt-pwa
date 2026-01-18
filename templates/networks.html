@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}ZeroTier Networks{% endblock %}
+
+{% block header_actions %}
+<a href="/" class="btn btn-small">
+    <i class="fas fa-sync-alt"></i> Refresh
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <i class="fas fa-globe"></i>
+        My ZeroTier Networks
+    </h1>
+    <p class="page-subtitle">
+        {{ networks|length }} network{{ 's' if networks|length != 1 else '' }} available
+    </p>
+</div>
+
+{% if networks %}
+    <div class="networks-grid">
+        {% for network in networks %}
+            <div class="network-card" onclick="location.href='/network/{{ network.id }}'">
+                <div class="network-card-header">
+                    <div class="network-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <div class="network-info">
+                        <h3>{{ network.config.name or 'Unnamed Network' }}</h3>
+                        <p>{{ network.id }}</p>
+                    </div>
+                </div>
+                
+                <div class="network-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <span>Created: {{ network.config.creationTime|timestamp_to_date if network.config.creationTime else 'Unknown' }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-cog"></i>
+                        <span>Private: {{ 'Yes' if network.config.private else 'No' }}</span>
+                    </div>
+                </div>
+                
+                <div class="network-actions">
+                    <a href="/network/{{ network.id }}" class="btn btn-primary btn-small">
+                        <i class="fas fa-eye"></i> View Members
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h3>No Networks Found</h3>
+        <p>You don't have any ZeroTier networks yet, or your API token doesn't have access.</p>
+        <a href="/setup" class="btn btn-primary">
+            <i class="fas fa-cog"></i> Check Configuration
+        </a>
+    </div>
+{% endif %}
+
+<script>
+    // Add CSS animation
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.network-card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('fade-in');
+        });
+    });
+</script>
+{% endblock %}

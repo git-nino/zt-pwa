@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Network {{ network_id }} - Members{% endblock %}
+
+{% block header_actions %}
+<a href="/refresh/{{ network_id }}" class="btn btn-small">
+    <i class="fas fa-sync-alt"></i> Refresh
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        Network Members
+        <small class="network-id">{{ network_id }}</small>
+    </h1>
+    <p class="page-subtitle">
+        <i class="fas fa-users"></i>
+        {{ members|length }} member{{ 's' if members|length != 1 else '' }} found
+    </p>
+</div>
+
+<!-- Sort Controls -->
+<div class="sort-controls">
+    <div class="sort-group">
+        <span class="sort-label">Sort by:</span>
+        <div class="sort-buttons">
+            {% set sort_options = [
+                ('last_seen', 'Last Seen'),
+                ('name', 'Name'),
+                ('ip', 'IP Address'),
+                ('status', 'Status')
+            ] %}
+            
+            {% for value, label in sort_options %}
+                <button class="sort-btn {% if sort_by == value %}active{% endif %}"
+                        onclick="sortTable('{{ value }}')">
+                    {{ label }}
+                    {% if sort_by == value %}
+                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
+                    {% endif %}
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="sort-group">
+        <span class="sort-label">Order:</span>
+        <div class="sort-buttons">
+            <button class="sort-btn {% if order == 'desc' %}active{% endif %}"
+                    onclick="changeOrder('desc')">
+                <i class="fas fa-arrow-down"></i> Descending
+            </button>
+            <button class="sort-btn {% if order == 'asc' %}active{% endif %}"
+                    onclick="changeOrder('asc')">
+                <i class="fas fa-arrow-up"></i> Ascending
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Members Table -->
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th class="sortable" onclick="sortTable('name')">
+                    Name
+                    {% if sort_by == 'name' %}
+                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
+                    {% endif %}
+                </th>
+                <th class="sortable" onclick="sortTable('ip')">
+                    IP Address
+                    {% if sort_by == 'ip' %}
+                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
+                    {% endif %}
+                </th>
+                <th class="sortable" onclick="sortTable('last_seen')">
+                    Last Seen
+                    {% if sort_by == 'last_seen' %}
+                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
+                    {% endif %}
+                </th>
+                <th class="sortable" onclick="sortTable('status')">
+                    Status
+                    {% if sort_by == 'status' %}
+                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
+                    {% endif %}
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if members %}
+                {% for m in members %}
+                <tr class="{% if m.online %}online{% else %}offline{% endif %}">
+                    <td>
+                        <div class="member-name">
+                            <i class="fas fa-{% if m.online %}desktop text-success{% else %}desktop text-muted{% endif %}"></i>
+                            {{ m.name }}
+                        </div>
+                        <small class="member-id">{{ m.id[:8] }}...</small>
+                    </td>
+                    <td>
+                        <div class="member-ip">
+                            <i class="fas fa-network-wired"></i>
+                            {{ m.ip if m.ip != 'N/A' else 'No IP assigned' }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="last-seen">
+                            <i class="fas fa-clock"></i>
+                            {{ m.last_seen }}
+                        </div>
+                        {% if m.last_seen_raw %}
+                        <small>{{ m.last_seen_raw|timestamp_to_date }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="status-badges">
+                            {% if m.online %}
+                                <span class="status-badge status-online">
+                                    <i class="fas fa-circle"></i> Online
+                                </span>
+                            {% else %}
+                                <span class="status-badge status-offline">
+                                    <i class="fas fa-circle"></i> Offline
+                                </span>
+                            {% endif %}
+                            
+                            {% if m.authorized %}
+                                <span class="status-badge status-authorized">
+                                    <i class="fas fa-check"></i> Authorized
+                                </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="4" class="empty-state">
+                        <i class="fas fa-users-slash"></i>
+                        <h3>No members found</h3>
+                        <p>This network doesn't have any members yet.</p>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-cards">
+    <div class="summary-card">
+        <div class="summary-icon online">
+            <i class="fas fa-wifi"></i>
+        </div>
+        <div class="summary-content">
+            <h3>{{ members|selectattr('online')|list|length }}</h3>
+            <p>Online Devices</p>
+        </div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-icon total">
+            <i class="fas fa-server"></i>
+        </div>
+        <div class="summary-content">
+            <h3>{{ members|length }}</h3>
+            <p>Total Devices</p>
+        </div>
+    </div>
+    
+    <div class="summary-card">
+        <div class="summary-icon authorized">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <div class="summary-content">
+            <h3>{{ members|selectattr('authorized')|list|length }}</h3>
+            <p>Authorized</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Sorting functions
+    function sortTable(sortBy) {
+        const url = new URL(window.location.href);
+        const currentSort = url.searchParams.get('sort');
+        const currentOrder = url.searchParams.get('order');
+        
+        let newOrder = 'desc';
+        if (currentSort === sortBy && currentOrder === 'desc') {
+            newOrder = 'asc';
+        }
+        
+        url.searchParams.set('sort', sortBy);
+        url.searchParams.set('order', newOrder);
+        window.location.href = url.toString();
+    }
+
+    function changeOrder(order) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('order', order);
+        window.location.href = url.toString();
+    }
+</script>
+{% endblock %}
