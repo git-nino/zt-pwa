@@ -1,86 +1,106 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -euo pipefail
 
-echo "🚀 Installing ZT-PWA (app4)..."
+echo "🚀 Installing ZT-PWA (app4) on Termux..."
 
 ### VARIABLES
 APP_NAME="app4"
 REPO_URL="https://github.com/git-nino/zt-pwa.git"
-BASE_DIR="$HOME/app_volumes"
-APP_DIR="$BASE_DIR/$APP_NAME"
+APP_BASE="$HOME/app_volumes"
+APP_DIR="$APP_BASE/$APP_NAME"
 VENV_DIR="$APP_DIR/venv"
 PYTHON="$VENV_DIR/bin/python"
-SERVICE_DIR="$PREFIX/var/service/$APP_NAME"
 BIN_DIR="$PREFIX/bin"
+SERVICE_DIR="$PREFIX/var/service/$APP_NAME"
+RUNSVDIR="$PREFIX/var/run/service"
 
-### 1️⃣ Check Termux environment
-if [[ -z "${PREFIX:-}" ]]; then
-    echo "❌ This installer must be run inside Termux"
-    exit 1
+### 1️⃣ Verify Termux environment
+if [[ -z "${PREFIX:-}" || ! -d "$PREFIX" ]]; then
+  echo "❌ This installer must be run inside Termux"
+  exit 1
 fi
 
-### 2️⃣ Ensure storage access
+### 2️⃣ Storage permission (non-fatal)
+echo "📂 Setting up storage access..."
 termux-setup-storage >/dev/null 2>&1 || true
 
-### 3️⃣ Update system packages
-echo "📦 Updating packages..."
-pkg update -y
-pkg upgrade -y
+### 3️⃣ Update system
+echo "🔄 Updating packages..."
+pkg update -y && pkg upgrade -y
 
-### 4️⃣ Install dependencies
-echo "🔧 Installing system dependencies..."
-pkg install -y python git tsu termux-services
+### 4️⃣ Install required packages
+echo "📦 Installing dependencies..."
+pkg install -y \
+  python \
+  git \
+  termux-services
 
-### 5️⃣ Create base directory
-mkdir -p "$BASE_DIR"
+### 5️⃣ Clone or update app
+echo "📥 Deploying application..."
+mkdir -p "$APP_BASE"
 
-### 6️⃣ Clone or update repo
 if [[ -d "$APP_DIR/.git" ]]; then
-    echo "🔄 Updating existing app..."
-    cd "$APP_DIR"
-    git pull
+  cd "$APP_DIR"
+  git pull --rebase
 else
-    echo "⬇️ Cloning repository..."
-    git clone "$REPO_URL" "$APP_DIR"
-    cd "$APP_DIR"
+  git clone "$REPO_URL" "$APP_DIR"
 fi
 
-### 7️⃣ Create Python virtual environment
+### 6️⃣ Create venv (only if missing)
 if [[ ! -d "$VENV_DIR" ]]; then
-    echo "🐍 Creating virtual environment..."
-    python -m venv "$VENV_DIR"
+  echo "🐍 Creating Python virtual environment..."
+  python -m venv "$VENV_DIR"
 fi
 
-### 8️⃣ Install Python packages
-echo "📚 Installing Python packages..."
-"$PYTHON" -m pip install --upgrade pip
-"$PYTHON" -m pip install -r requirements.txt
+### 7️⃣ Install Python dependencies
+echo "📦 Installing Python dependencies..."
+"$PYTHON" -m pip install --upgrade pip setuptools wheel
 
-### 9️⃣ Create Termux service for auto-start
-echo "🛠 Setting up Termux service..."
+if [[ -f "$APP_DIR/requirements.txt" ]]; then
+  "$PYTHON" -m pip install -r "$APP_DIR/requirements.txt"
+else
+  "$PYTHON" -m pip install flask requests
+fi
+
+### 8️⃣ Verify tools
+echo "🔍 Verifying installation..."
+"$PYTHON" - <<'EOF'
+import importlib.metadata
+print("Flask OK:", importlib.metadata.version("flask"))
+import importlib.util
+print("Requests OK:", importlib.util.find_spec("requests") is not None)
+EOF
+
+### 9️⃣ Create runit service
+echo "⚙️ Creating runit service..."
 mkdir -p "$SERVICE_DIR"
-cat > "$SERVICE_DIR/run" <<'EOF'
-#!/data/data/com.termux/files/usr/bin/bash
-APP_DIR="$HOME/app_volumes/app4"
-VENV_DIR="$APP_DIR/venv"
-PYTHON="$VENV_DIR/bin/python"
 
+cat > "$SERVICE_DIR/run" <<EOF
+#!/data/data/com.termux/files/usr/bin/sh
 cd "$APP_DIR"
-# Activate virtual environment and run app.py
-source "$VENV_DIR/bin/activate"
 exec "$PYTHON" app.py
 EOF
 
 chmod +x "$SERVICE_DIR/run"
-echo "✅ Service created at $SERVICE_DIR"
-echo "ℹ️ Enable and start it with:"
-echo "   sv enable $APP_NAME"
-echo "   sv up $APP_NAME"
 
-### 1️⃣0️⃣ Finished
-echo
-echo "✅ ZT-PWA (app4) installed successfully!"
-echo "➡️ To run manually:"
-echo "   cd $APP_DIR"
-echo "   source venv/bin/activate"
-echo "   python app.py"
+### 🔟 Enable and start service if runsvdir is running
+if [[ -d "$RUNSVDIR" && -x "$PREFIX/bin/sv-enable" ]]; then
+  echo "🔁 Enabling and starting service..."
+  sv-enable "$APP_NAME" || true
+  sv up "$APP_NAME" || true
+  echo "✅ Service started"
+else
+  echo "ℹ️ Services not active yet (Termux restart required)"
+fi
+
+### ✅ Done
+echo ""
+echo "✅ Installation completed successfully!"
+echo ""
+echo "📌 NEXT STEP:"
+echo "⚠️ Close Termux completely (swipe away) and reopen it."
+echo "👉 After reopening, the service will start automatically."
+echo ""
+echo "📥 Commands available after restart:"
+echo "   sv status $APP_NAME"
+echo ""
