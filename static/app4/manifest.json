@@ -1,19 +1,16 @@
 {
-  "name": "ZeroTier App4",
-  "short_name": "ZT-App4",
-  "start_url": "/",
+  "id": "/app4/",
+  "name": "ZT",
+  "short_name": "ZT",
+  "start_url": "/app4/",
+  "scope": "/app4/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#f7d51d",
+  "background_color": "#020617",
+  "theme_color": "#020617",
   "icons": [
     {
       "src": "/static/app4/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/static/app4/icon-512.png",
-      "sizes": "512x512",
       "type": "image/png"
     }
   ]
