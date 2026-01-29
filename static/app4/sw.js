@@ -1,7 +1,28 @@
-const CACHE_NAME = 'zt-app4-v1';
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/', '/static/style.css'])));
+// Install Service Worker
+self.addEventListener('install', event => {
+    self.skipWaiting();
+    console.log('Service Worker Installed');
 });
-self.addEventListener('fetch', (e) => {
-  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+
+// Activate Service Worker
+self.addEventListener('activate', event => {
+    self.clients.claim();
+    console.log('Service Worker Activated');
+});
+
+// Fetch handler
+self.addEventListener('fetch', event => {
+    const request = event.request;
+
+    // Always fetch fresh HTML pages (navigation requests)
+    if (request.mode === 'navigate') {
+        event.respondWith(
+            fetch(request)
+                .then(response => response)
+                .catch(err => caches.match(request)) // fallback to cache if offline
+        );
+    } else {
+        // For other requests (CSS, JS, images), just fetch normally
+        event.respondWith(fetch(request));
+    }
 });
