@@ -1,103 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Setup - ZeroTier Controller{% endblock %}
-
-{% block header %}{% endblock %}
-{% block footer %}{% endblock %}
-
 {% block content %}
-<div class="setup-page">
-    <div class="setup-container">
-        <div class="setup-card">
-            <div class="setup-header">
-                <i class="fas fa-shield-alt"></i>
-                <h1>ZeroTier Controller</h1>
-                <p>Configure your API token to get started</p>
-            </div>
-
-            <form method="POST" class="setup-form">
-                <div class="form-group">
-                    <label for="api_token">
-                        <i class="fas fa-key"></i> API Token
-                    </label>
-                    <input 
-                        type="password" 
-                        id="api_token" 
-                        name="api_token" 
-                        placeholder="Enter your ZeroTier API token"
-                        value="{{ request.form.api_token if request.form }}"
-                        required
-                        autocomplete="off"
-                    >
-                    <small class="help-text">
-                        Get your token from 
-                        <a href="https://my.zerotier.com/account" target="_blank" rel="noopener">
-                            ZeroTier Central
-                        </a>
-                    </small>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Save & Continue
-                    </button>
-                    
-                    {% if has_token %}
-                    <a href="/" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </a>
-                    {% endif %}
-                </div>
-            </form>
-
-            <div class="setup-info">
-                <details>
-                    <summary>
-                        <i class="fas fa-question-circle"></i> How to get your API token?
-                    </summary>
-                    <div class="info-content">
-                        <ol>
-                            <li>Log into <a href="https://my.zerotier.com" target="_blank">ZeroTier Central</a></li>
-                            <li>Go to <strong>Account Settings</strong></li>
-                            <li>Scroll to <strong>API Access Tokens</strong> section</li>
-                            <li>Click <strong>Generate Token</strong></li>
-                            <li>Copy the token and paste it here</li>
-                        </ol>
-                        <div class="warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Keep your token secure!</strong> Don't share it or commit it to public repositories.
-                        </div>
-                    </div>
-                </details>
-            </div>
+<div class="flex-center-wrapper">
+    <div class="setup-card">
+        <div style="margin-bottom: 40px;">
+            <i class="fas fa-circle-nodes" style="font-size: 4rem; color: var(--primary-color); margin-bottom: 15px; filter: drop-shadow(0 0 10px rgba(58,134,255,0.4));"></i>
+            <h1 style="font-size: 2.2rem; margin: 0; font-weight: 800; letter-spacing: -1px;">ZeroTier</h1>
+            <p style="color: var(--text-dim); margin-top: 5px; font-size: 1.1rem;">Controller Dashboard</p>
         </div>
 
-        <div class="setup-footer">
-            <p>ZeroTier Controller v1.0</p>
-        </div>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+            <div style="color: var(--danger-color); margin-bottom: 20px; font-size: 0.9rem; background: rgba(255, 77, 77, 0.1); padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 77, 77, 0.2);">
+                {{ message }}
+            </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/app4/setup">
+            <div style="text-align: left; margin-bottom: 8px; padding-left: 4px;">
+                <label style="font-size: 0.75rem; color: var(--primary-color); text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Central API Token</label>
+            </div>
+            
+            <input 
+                type="password" 
+                name="api_token" 
+                class="setup-input"
+                placeholder="Paste your token here"
+                required
+            >
+            
+            <button type="submit" class="btn-primary">
+                Connect Dashboard
+            </button>
+        </form>
+        
+        <p style="color: #475569; font-size: 0.85rem; margin-top: 25px;">
+            Your token is stored locally and used only for API requests.
+        </p>
     </div>
 </div>
-
-<script>
-    // Token visibility toggle
-    document.addEventListener('DOMContentLoaded', function() {
-        const tokenInput = document.getElementById('api_token');
-        const showTokenBtn = document.createElement('button');
-        showTokenBtn.type = 'button';
-        showTokenBtn.className = 'show-token-btn';
-        showTokenBtn.innerHTML = '<i class="fas fa-eye"></i>';
-        
-        tokenInput.parentNode.appendChild(showTokenBtn);
-        
-        showTokenBtn.addEventListener('click', function() {
-            if (tokenInput.type === 'password') {
-                tokenInput.type = 'text';
-                this.innerHTML = '<i class="fas fa-eye-slash"></i>';
-            } else {
-                tokenInput.type = 'password';
-                this.innerHTML = '<i class="fas fa-eye"></i>';
-            }
-        });
-    });
-</script>
 {% endblock %}
