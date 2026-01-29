@@ -1,212 +1,74 @@
 {% extends "base.html" %}
 
-{% block title %}Network {{ network_id }} - Members{% endblock %}
-
-{% block header_actions %}
-<a href="/refresh/{{ network_id }}" class="btn btn-small">
-    <i class="fas fa-sync-alt"></i> Refresh
-</a>
-{% endblock %}
-
 {% block content %}
-<div class="page-header">
-    <h1>
-        <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-        </a>
-        Network Members
-        <small class="network-id">{{ network_id }}</small>
-    </h1>
-    <p class="page-subtitle">
-        <i class="fas fa-users"></i>
-        {{ members|length }} member{{ 's' if members|length != 1 else '' }} found
-    </p>
-</div>
-
-<!-- Sort Controls -->
-<div class="sort-controls">
-    <div class="sort-group">
-        <span class="sort-label">Sort by:</span>
-        <div class="sort-buttons">
-            {% set sort_options = [
-                ('last_seen', 'Last Seen'),
-                ('name', 'Name'),
-                ('ip', 'IP Address'),
-                ('status', 'Status')
-            ] %}
-            
-            {% for value, label in sort_options %}
-                <button class="sort-btn {% if sort_by == value %}active{% endif %}"
-                        onclick="sortTable('{{ value }}')">
-                    {{ label }}
-                    {% if sort_by == value %}
-                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
-                    {% endif %}
-                </button>
-            {% endfor %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding: 0 5px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="{{ url_for('networks_page') }}" style="color: white; text-decoration: none; font-size: 1.5rem; display: flex; align-items: center;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            <h1 style="font-size: 2.4rem; margin: 0; font-weight: 700;">Members</h1>
         </div>
+        <p style="color: #10b981; margin: 0 0 0 42px; font-weight: 600; font-size: 1.1rem;">
+            â— {{ online_count }} Online
+        </p>
     </div>
-    
-    <div class="sort-group">
-        <span class="sort-label">Order:</span>
-        <div class="sort-buttons">
-            <button class="sort-btn {% if order == 'desc' %}active{% endif %}"
-                    onclick="changeOrder('desc')">
-                <i class="fas fa-arrow-down"></i> Descending
-            </button>
-            <button class="sort-btn {% if order == 'asc' %}active{% endif %}"
-                    onclick="changeOrder('asc')">
-                <i class="fas fa-arrow-up"></i> Ascending
-            </button>
-        </div>
+
+    <div style="position: relative; margin-top: 10px;">
+        <select onchange="location.href='?sort=' + this.value" 
+                style="background: #1e293b; color: white; border: 1px solid #334155; padding: 12px 40px 12px 18px; border-radius: 14px; font-size: 1rem; appearance: none; cursor: pointer;">
+            <option value="last_seen" {% if sort_by == 'last_seen' %}selected{% endif %}>Recent</option>
+            <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Name</option>
+        </select>
+        <i class="fas fa-chevron-down" style="position: absolute; right: 15px; top: 16px; font-size: 0.8rem; color: #94a3b8; pointer-events: none;"></i>
     </div>
 </div>
 
-<!-- Members Table -->
-<div class="table-container">
-    <table>
-        <thead>
-            <tr>
-                <th class="sortable" onclick="sortTable('name')">
-                    Name
-                    {% if sort_by == 'name' %}
-                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
-                    {% endif %}
-                </th>
-                <th class="sortable" onclick="sortTable('ip')">
-                    IP Address
-                    {% if sort_by == 'ip' %}
-                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
-                    {% endif %}
-                </th>
-                <th class="sortable" onclick="sortTable('last_seen')">
-                    Last Seen
-                    {% if sort_by == 'last_seen' %}
-                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
-                    {% endif %}
-                </th>
-                <th class="sortable" onclick="sortTable('status')">
-                    Status
-                    {% if sort_by == 'status' %}
-                        <i class="fas fa-chevron-{% if order == 'desc' %}down{% else %}up{% endif %}"></i>
-                    {% endif %}
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            {% if members %}
-                {% for m in members %}
-                <tr class="{% if m.online %}online{% else %}offline{% endif %}">
-                    <td>
-                        <div class="member-name">
-                            <i class="fas fa-{% if m.online %}desktop text-success{% else %}desktop text-muted{% endif %}"></i>
-                            {{ m.name }}
-                        </div>
-                        <small class="member-id">{{ m.id[:8] }}...</small>
-                    </td>
-                    <td>
-                        <div class="member-ip">
-                            <i class="fas fa-network-wired"></i>
-                            {{ m.ip if m.ip != 'N/A' else 'No IP assigned' }}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="last-seen">
-                            <i class="fas fa-clock"></i>
-                            {{ m.last_seen }}
-                        </div>
-                        {% if m.last_seen_raw %}
-                        <small>{{ m.last_seen_raw|timestamp_to_date }}</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div class="status-badges">
-                            {% if m.online %}
-                                <span class="status-badge status-online">
-                                    <i class="fas fa-circle"></i> Online
-                                </span>
-                            {% else %}
-                                <span class="status-badge status-offline">
-                                    <i class="fas fa-circle"></i> Offline
-                                </span>
-                            {% endif %}
-                            
-                            {% if m.authorized %}
-                                <span class="status-badge status-authorized">
-                                    <i class="fas fa-check"></i> Authorized
-                                </span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="4" class="empty-state">
-                        <i class="fas fa-users-slash"></i>
-                        <h3>No members found</h3>
-                        <p>This network doesn't have any members yet.</p>
-                    </td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
-</div>
+<div class="members-list">
+    {% for m in members %}
+    <div class="network-card" style="position: relative; padding: 25px; margin-bottom: 15px; background: #1a2232; border-radius: 20px; border: 1px solid #2d384a; overflow: hidden; display: flex; justify-content: space-between; align-items: center;">
+        
+        {% if m.online %}
+        <div style="position: absolute; left: 0; top: 20%; bottom: 20%; width: 5px; background: #10b981; box-shadow: 0 0 15px #10b981; border-radius: 0 4px 4px 0;"></div>
+        {% endif %}
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <h3 style="margin: 0; font-size: 1.6rem; font-weight: 700; color: {% if m.online %}#10b981{% else %}#fff{% endif %};">
+                {{ m.name }}
+            </h3>
+            <div style="color: #94a3b8; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; cursor: pointer;" onclick="copyToClipboard('{{ m.ip }}', event)">
+                <i class="fas fa-link" style="font-size: 0.9rem; opacity: 0.6;"></i> 
+                {{ m.ip }}
+            </div>
+        </div>
 
-<!-- Summary Cards -->
-<div class="summary-cards">
-    <div class="summary-card">
-        <div class="summary-icon online">
-            <i class="fas fa-wifi"></i>
-        </div>
-        <div class="summary-content">
-            <h3>{{ members|selectattr('online')|list|length }}</h3>
-            <p>Online Devices</p>
-        </div>
-    </div>
-    
-    <div class="summary-card">
-        <div class="summary-icon total">
-            <i class="fas fa-server"></i>
-        </div>
-        <div class="summary-content">
-            <h3>{{ members|length }}</h3>
-            <p>Total Devices</p>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+            <div style="height: 1.6rem; display: flex; align-items: center;">
+                {% if m.authorized %}
+                    <i class="fas fa-shield-halved" style="color: #3b82f6; font-size: 1.6rem;"></i>
+                {% else %}
+                    <i class="fas fa-lock-open" style="color: #64748b; font-size: 1.6rem;"></i>
+                {% endif %}
+            </div>
+            <span style="color: #64748b; font-size: 1rem;">{{ m.last_seen }}</span>
         </div>
     </div>
-    
-    <div class="summary-card">
-        <div class="summary-icon authorized">
-            <i class="fas fa-shield-alt"></i>
-        </div>
-        <div class="summary-content">
-            <h3>{{ members|selectattr('authorized')|list|length }}</h3>
-            <p>Authorized</p>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
 <script>
-    // Sorting functions
-    function sortTable(sortBy) {
-        const url = new URL(window.location.href);
-        const currentSort = url.searchParams.get('sort');
-        const currentOrder = url.searchParams.get('order');
-        
-        let newOrder = 'desc';
-        if (currentSort === sortBy && currentOrder === 'desc') {
-            newOrder = 'asc';
-        }
-        
-        url.searchParams.set('sort', sortBy);
-        url.searchParams.set('order', newOrder);
-        window.location.href = url.toString();
-    }
-
-    function changeOrder(order) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('order', order);
-        window.location.href = url.toString();
-    }
+function copyToClipboard(text, event) {
+    event.stopPropagation();
+    navigator.clipboard.writeText(text).then(() => {
+        const target = event.currentTarget;
+        const originalContent = target.innerHTML;
+        target.style.color = "#10b981";
+        target.innerHTML = '<i class="fas fa-check"></i> Copied';
+        setTimeout(() => {
+            target.style.color = "#94a3b8";
+            target.innerHTML = originalContent;
+        }, 1200);
+    });
+}
 </script>
 {% endblock %}
